@@ -1,0 +1,431 @@
+---
+title: "Olympic Analysis"
+author: "Jeremy Fyrer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+```{r}
+view(athlete_events)
+view(noc_regions)
+```
+
+```{r}
+# SCRIPT 1: DATA CLEANING AND EXPLORATORY DATA ANALYSIS
+
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
+# 1. IMPORT DATA
+
+athletes_raw <- read_csv(
+  "athlete_events.csv",
+  show_col_types = FALSE
+)
+
+regions_raw <- read_csv(
+  "noc_regions.csv",
+  show_col_types = FALSE
+)
+
+# 2. EXPLORE ORIGINAL DATA
+
+glimpse(athletes_raw)
+
+summary(athletes_raw)
+
+# Missing values by column
+colSums(is.na(athletes_raw))
+
+# Duplicate records
+sum(duplicated(athletes_raw))
+```
+
+# 3. CLEAN ATHLETE DATA
+```{r}
+athletes <- athletes_raw %>%
+  distinct() %>%
+  mutate(
+    Age = as.numeric(Age),
+    Height = as.numeric(Height),
+    Weight = as.numeric(Weight),
+    Year = as.integer(Year),
+
+    Age = if_else(
+      Age < 10 | Age > 100,
+      NA_real_,
+      Age
+    ),
+
+    Height = if_else(
+      Height < 100 | Height > 250,
+      NA_real_,
+      Height
+    ),
+
+    Weight = if_else(
+      Weight < 25 | Weight > 300,
+      NA_real_,
+      Weight
+    ),
+
+    Medal = if_else(
+      Medal %in% c("Gold", "Silver", "Bronze"),
+      Medal,
+      NA_character_
+    )
+  )
+```
+# 4. CLEAN COUNTRY INFORMATION
+
+```{r}
+regions <- regions_raw %>%
+  distinct(NOC, .keep_all = TRUE)
+
+athletes <- athletes %>%
+  left_join(
+    regions %>% select(NOC, region, notes),
+    by = "NOC"
+  ) %>%
+  mutate(
+    Country = coalesce(region, Team)
+  )
+
+# Check unmatched NOC codes
+unmatched_countries <- athletes %>%
+  filter(is.na(region)) %>%
+  distinct(NOC, Team)
+
+write_csv(
+  unmatched_countries,
+  "unmatched_countries.csv"
+)
+```
+
+# 5. CREATE MEDAL DATASET
+
+```{r}
+medals <- athletes %>%
+  filter(!is.na(Medal))
+```
+
+# 6. COUNTRY MEDAL ANALYSIS
+
+```{r}
+# Each country receives one medal for each event at each Games.
+# Team members do not create additional country medals.
+
+country_medals <- medals %>%
+  distinct(
+    NOC, Country, Games, Season,
+    Year, Event, Medal
+  )
+
+country_summary <- country_medals %>%
+  group_by(Country) %>%
+  summarise(
+    Gold = sum(Medal == "Gold"),
+    Silver = sum(Medal == "Silver"),
+    Bronze = sum(Medal == "Bronze"),
+    Total = Gold + Silver + Bronze,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(Total))
+
+# Summer medals
+summer_medals <- country_medals %>%
+  filter(Season == "Summer") %>%
+  group_by(Country) %>%
+  summarise(
+    Total = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(Total))
+
+# Winter medals
+winter_medals <- country_medals %>%
+  filter(Season == "Winter") %>%
+  group_by(Country) %>%
+  summarise(
+    Total = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(desc(Total))
+```
+
+# 7. ATHLETE MEDAL ANALYSIS
+
+```{r}
+athlete_medals <- medals %>%
+  distinct(
+    ID, Name, Games, Event, Medal
+  )
+
+athlete_summary <- athlete_medals %>%
+  group_by(ID, Name) %>%
+  summarise(
+    Gold = sum(Medal == "Gold"),
+    Silver = sum(Medal == "Silver"),
+    Bronze = sum(Medal == "Bronze"),
+    Total = Gold + Silver + Bronze,
+    .groups = "drop"
+  ) %>%
+  arrange(desc(Total))
+```
+
+# 8. AGE AND PERFORMANCE ANALYSIS
+
+```{r}
+age_analysis <- athletes %>%
+  filter(!is.na(Age)) %>%
+  mutate(
+    Performance = if_else(
+      is.na(Medal),
+      "Non-medal winner",
+      "Medal winner"
+    )
+  )
+
+age_summary <- age_analysis %>%
+  group_by(Sport, Performance) %>%
+  summarise(
+    Average_Age = mean(Age),
+    Median_Age = median(Age),
+    Number_of_Athletes = n_distinct(ID),
+    .groups = "drop"
+  )
+```
+
+# 9. GENDER PARTICIPATION ANALYSIS
+
+```{r}
+gender_participation <- athletes %>%
+  distinct(ID, Year, Season, Sex) %>%
+  group_by(Year, Season, Sex) %>%
+  summarise(
+    Participants = n_distinct(ID),
+    .groups = "drop"
+  )
+```
+
+# 10. COUNTRY PERFORMANCE OVER TIME
+
+```{r}
+country_trends <- country_medals %>%
+  group_by(NOC, Country, Year, Season) %>%
+  summarise(
+    Medals = n(),
+    .groups = "drop"
+  ) %>%
+  arrange(Country, Year)
+```
+
+# 11. HOST COUNTRY TEMPLATE
+
+```{r}
+# The original dataset provides host cities.
+# Host NOC codes must be added manually.
+
+host_template <- athletes %>%
+  distinct(Year, Season, City) %>%
+  arrange(Year, Season) %>%
+  mutate(Host_NOC = NA_character_)
+
+write_csv(
+  host_template,
+  "host_lookup_template.csv"
+)
+```
+
+# 12. CREATE GRAPHS
+
+```{r}
+# Top 10 countries
+
+country_graph <- country_summary %>%
+  slice_max(Total, n = 10) %>%
+  ggplot(
+    aes(
+      x = reorder(Country, Total),
+      y = Total
+    )
+  ) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  labs(
+    title = "Top 10 Olympic Countries",
+    x = "Country",
+    y = "Total Medals"
+  ) +
+  theme_minimal()
+
+print(country_graph)
+
+ggsave(
+  "top_countries.png",
+  country_graph,
+  width = 9,
+  height = 6
+)
+
+# Gender participation
+
+gender_graph <- ggplot(
+  gender_participation,
+  aes(
+    x = Year,
+    y = Participants,
+    color = Sex
+  )
+) +
+  geom_line(linewidth = 1) +
+  facet_wrap(~Season) +
+  labs(
+    title = "Olympic Participation by Gender",
+    x = "Year",
+    y = "Number of Participants"
+  ) +
+  theme_minimal()
+
+print(gender_graph)
+
+ggsave(
+  "gender_participation.png",
+  gender_graph,
+  width = 9,
+  height = 6
+)
+
+# Age and performance
+
+age_graph <- ggplot(
+  age_analysis,
+  aes(
+    x = Performance,
+    y = Age,
+    fill = Performance
+  )
+) +
+  geom_boxplot() +
+  facet_wrap(~Sport) +
+  labs(
+    title = "Age and Olympic Performance",
+    x = "Performance",
+    y = "Age"
+  ) +
+  theme_minimal()
+
+print(age_graph)
+
+ggsave(
+  "age_performance.png",
+  age_graph,
+  width = 12,
+  height = 8
+)
+
+# Country performance over time
+
+trend_graph <- ggplot(
+  country_trends,
+  aes(
+    x = Year,
+    y = Medals,
+    color = Country
+  )
+) +
+  geom_line() +
+  labs(
+    title = "Olympic Medal Trends",
+    x = "Year",
+    y = "Medals"
+  ) +
+  theme_minimal()
+
+print(trend_graph)
+
+ggsave(
+  "country_trends.png",
+  trend_graph,
+  width = 10,
+  height = 6
+)
+```
+
+# 13. EXPORT CLEANED DATA AND ANALYSIS
+
+```{r}
+write_csv(
+  athletes,
+  "athletes_clean.csv"
+)
+
+write_csv(
+  medals,
+  "medals_clean.csv"
+)
+
+write_csv(
+  country_summary,
+  "country_summary.csv"
+)
+
+write_csv(
+  summer_medals,
+  "summer_medals.csv"
+)
+
+write_csv(
+  winter_medals,
+  "winter_medals.csv"
+)
+
+write_csv(
+  athlete_summary,
+  "athlete_summary.csv"
+)
+
+write_csv(
+  age_summary,
+  "age_summary.csv"
+)
+
+write_csv(
+  gender_participation,
+  "gender_participation.csv"
+)
+
+write_csv(
+  country_trends,
+  "country_trends.csv"
+)
+```
+
+# 14. FINAL DATA SUMMARY
+
+```{r}
+cat("\nDATA CLEANING COMPLETE\n")
+
+cat("Original observations:",
+    nrow(athletes_raw), "\n")
+
+cat("Cleaned observations:",
+    nrow(athletes), "\n")
+
+cat("Unique athletes:",
+    n_distinct(athletes$ID), "\n")
+
+cat("Countries:",
+    n_distinct(athletes$Country), "\n")
+
+cat("Medal records:",
+    nrow(medals), "\n")
+
+cat("Olympic years:",
+    min(athletes$Year, na.rm = TRUE),
+    "to",
+    max(athletes$Year, na.rm = TRUE), "\n")
+
+cat("\nAll cleaning and analysis files exported!\n")
+```
+
