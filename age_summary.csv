@@ -1,0 +1,126 @@
+Sport,Performance,Average_Age,Median_Age,Number_of_Athletes
+Aeronautics,Medal winner,26,26,1
+Alpine Skiing,Medal winner,24.343457943925234,24,261
+Alpine Skiing,Non-medal winner,23.146942208338338,23,2683
+Alpinism,Medal winner,38.8125,38,16
+Archery,Medal winner,30.927899686520377,27,202
+Archery,Non-medal winner,27.441860465116278,25,1011
+Art Competitions,Medal winner,42.328947368421055,41,142
+Art Competitions,Non-medal winner,44.92952050837666,44,1387
+Athletics,Medal winner,25.020532319391634,24,2820
+Athletics,Non-medal winner,25.177760562540968,25,20313
+Badminton,Medal winner,25.38095238095238,25,130
+Badminton,Non-medal winner,25.709076803723818,25,746
+Baseball,Medal winner,26.25297619047619,26,290
+Baseball,Non-medal winner,26.23339317773788,26,490
+Basketball,Medal winner,25.34230055658627,25,841
+Basketball,Non-medal winner,25.318765281173594,25,2577
+Basque Pelota,Medal winner,26,26,2
+Beach Volleyball,Medal winner,29.75,30,55
+Beach Volleyball,Non-medal winner,29.03048780487805,29,359
+Biathlon,Medal winner,26.901960784313726,26,204
+Biathlon,Non-medal winner,26.499330954504906,26,1117
+Bobsleigh,Medal winner,29.848484848484848,29,275
+Bobsleigh,Non-medal winner,28.997297297297298,28,1491
+Boxing,Medal winner,23.05800214822771,23,849
+Boxing,Non-medal winner,23.054189245518966,23,4293
+Canoeing,Medal winner,25.963948497854076,26,708
+Canoeing,Non-medal winner,25.3967008650171,25,2867
+Cricket,Medal winner,29.333333333333332,27.5,18
+Croquet,Medal winner,31.125,22,5
+Croquet,Non-medal winner,36.714285714285715,33,4
+Cross Country Skiing,Medal winner,27.617268041237114,28,360
+Cross Country Skiing,Non-medal winner,25.855924056717136,25,2343
+Curling,Medal winner,33.30263157894737,32.5,144
+Curling,Non-medal winner,30.488745980707396,29,234
+Cycling,Medal winner,24.59514170040486,24,898
+Cycling,Non-medal winner,24.800806632310106,24,5103
+Diving,Medal winner,22.264775413711583,22,261
+Diving,Non-medal winner,22.521322889469104,22,1255
+Equestrianism,Medal winner,35.3717277486911,34,596
+Equestrianism,Non-medal winner,34.21054657428791,33,2168
+Fencing,Medal winner,28.89593023255814,28,974
+Fencing,Non-medal winner,28.464819277108433,27,3452
+Figure Skating,Medal winner,24.02077922077922,23,285
+Figure Skating,Non-medal winner,21.867654843832717,21,1425
+Football,Medal winner,24.159372958850426,23,1396
+Football,Non-medal winner,23.545773920231454,23,4558
+Freestyle Skiing,Medal winner,24.931372549019606,25,85
+Freestyle Skiing,Non-medal winner,24.365269461077844,24,592
+Golf,Medal winner,27.782608695652176,25.5,43
+Golf,Non-medal winner,29.804232804232804,29,188
+Gymnastics,Medal winner,23.40649291266575,23,1252
+Gymnastics,Non-medal winner,22.6699370206932,22,3194
+Handball,Medal winner,26.349056603773583,26,844
+Handball,Non-medal winner,26.291099883404588,26,2088
+Hockey,Medal winner,25.779559118236474,25,1196
+Hockey,Non-medal winner,25.691603875134554,25,2850
+Ice Hockey,Medal winner,25.79673202614379,25,1203
+Ice Hockey,Non-medal winner,25.84483194339146,25,2979
+Jeu De Paume,Medal winner,29,29,3
+Jeu De Paume,Non-medal winner,33.75,31.5,8
+Judo,Medal winner,25.19926873857404,25,443
+Judo,Non-medal winner,25.35167910447761,25,2459
+Lacrosse,Medal winner,26.86111111111111,26,36
+Luge,Medal winner,25.822222222222223,25,112
+Luge,Non-medal winner,24.460292983808788,24,742
+Military Ski Patrol,Medal winner,24.25,24.5,12
+Military Ski Patrol,Non-medal winner,22.857142857142858,22,7
+Modern Pentathlon,Medal winner,27.22043010752688,27,130
+Modern Pentathlon,Non-medal winner,26.28094575799722,26,791
+Motorboating,Medal winner,31.714285714285715,29,4
+Motorboating,Non-medal winner,34.75,31,8
+Nordic Combined,Medal winner,25.1030303030303,25,93
+Nordic Combined,Non-medal winner,24.235042735042736,24,572
+Polo,Medal winner,34.58461538461538,34,61
+Polo,Non-medal winner,37.28,37,25
+Racquets,Medal winner,28.8,27,7
+Racquets,Non-medal winner,28,28,2
+Rhythmic Gymnastics,Medal winner,18.931818181818183,18,120
+Rhythmic Gymnastics,Non-medal winner,18.688212927756656,18,474
+Roque,Medal winner,53.333333333333336,59,3
+Rowing,Medal winner,25.565371024734983,25,2253
+Rowing,Non-medal winner,25.163282221301284,25,5743
+Rugby,Medal winner,24.385964912280702,24,107
+Rugby Sevens,Medal winner,25.33783783783784,25,74
+Rugby Sevens,Non-medal winner,26.28,26,225
+Sailing,Medal winner,31.77054794520548,30,974
+Sailing,Non-medal winner,29.921212121212122,28,3686
+Shooting,Medal winner,33.44987146529563,32,734
+Shooting,Non-medal winner,33.418816067653275,33,4334
+Short Track Speed Skating,Medal winner,22.429577464788732,22,153
+Short Track Speed Skating,Non-medal winner,22.8896,23,419
+Skeleton,Medal winner,28.933333333333334,28,26
+Skeleton,Non-medal winner,29.994011976047904,29,128
+Ski Jumping,Medal winner,23.753623188405797,23,132
+Ski Jumping,Non-medal winner,23.308715596330273,23,838
+Snowboarding,Medal winner,24.666666666666668,24,75
+Snowboarding,Non-medal winner,24.842789598108748,24,543
+Softball,Medal winner,26.75977653631285,26,117
+Softball,Non-medal winner,26.023411371237458,26,263
+Speed Skating,Medal winner,25.374137931034483,25,294
+Speed Skating,Non-medal winner,24.179696848823294,24,1546
+Swimming,Medal winner,20.923356458539807,21,1637
+Swimming,Non-medal winner,20.511861128079822,20,7930
+Synchronized Swimming,Medal winner,23.809302325581395,23,141
+Synchronized Swimming,Non-medal winner,21.917391304347827,22,450
+Table Tennis,Medal winner,24.720238095238095,24,90
+Table Tennis,Non-medal winner,26.62696629213483,26,720
+Taekwondo,Medal winner,23.45138888888889,23,120
+Taekwondo,Non-medal winner,24.244588744588743,24,391
+Tennis,Medal winner,26.88719512195122,26,227
+Tennis,Non-medal winner,25.710373443983404,25,1121
+Trampolining,Medal winner,24.033333333333335,23,21
+Trampolining,Non-medal winner,25.40983606557377,25,84
+Triathlon,Medal winner,28.2,28,25
+Triathlon,Non-medal winner,27.851703406813627,28,348
+Tug-Of-War,Medal winner,29.53846153846154,29,81
+Tug-Of-War,Non-medal winner,28.714285714285715,27,35
+Volleyball,Medal winner,25.775025799793603,25,763
+Volleyball,Non-medal winner,24.947650453421268,25,2003
+Water Polo,Medal winner,25.874757281553396,25,748
+Water Polo,Non-medal winner,25.574923547400612,25,1938
+Weightlifting,Medal winner,25.278301886792452,25,500
+Weightlifting,Non-medal winner,25.547980613893376,25,2378
+Wrestling,Medal winner,26.07667984189723,26,1017
+Wrestling,Non-medal winner,25.73304927751019,25,3994

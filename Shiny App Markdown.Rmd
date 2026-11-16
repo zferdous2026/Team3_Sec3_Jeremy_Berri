@@ -1,0 +1,1060 @@
+---
+title: "Shiny app"
+author: "Jeremy Fyrer"
+date: "`r Sys.Date()`"
+output: html_document
+---
+```{r}
+library(shiny)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+
+# ============================================================
+# 1. LOAD CLEANED DATA
+# ============================================================
+
+athletes <- read_csv(
+  "athletes_clean.csv",
+  show_col_types = FALSE
+)
+
+medals <- athletes %>%
+  filter(!is.na(Medal))
+
+country_data <- medals %>%
+  distinct(
+    NOC, Country, Games, Season,
+    Year, Event, Medal
+  )
+
+athlete_data <- medals %>%
+  distinct(ID, Name, Games, Event, Medal)
+
+# ============================================================
+# 2. CREATE SUMMARY DATA
+# ============================================================
+
+country_summary <- country_data %>%
+  group_by(Country, Season) %>%
+  summarise(
+    Gold = sum(Medal == "Gold"),
+    Silver = sum(Medal == "Silver"),
+    Bronze = sum(Medal == "Bronze"),
+    Total = Gold + Silver + Bronze,
+    .groups = "drop"
+  )
+
+athlete_summary <- athlete_data %>%
+  group_by(ID, Name) %>%
+  summarise(
+    Gold = sum(Medal == "Gold"),
+    Silver = sum(Medal == "Silver"),
+    Bronze = sum(Medal == "Bronze"),
+    Total = Gold + Silver + Bronze,
+    .groups = "drop"
+  )
+
+gender_data <- athletes %>%
+  distinct(ID, Year, Season, Sex) %>%
+  group_by(Year, Season, Sex) %>%
+  summarise(
+    Participants = n_distinct(ID),
+    .groups = "drop"
+  )
+
+country_trends <- country_data %>%
+  group_by(Country, Year, Season) %>%
+  summarise(
+    Medals = n(),
+    .groups = "drop"
+  )
+
+# ============================================================
+# 3. USER INTERFACE
+# ============================================================
+
+ui <- navbarPage(
+
+  title = "Olympic History Dashboard",
+
+  header = tags$div(
+    style = "background-color:#17365D;
+             color:white;
+             padding:20px;",
+    h2("120 Years of Olympic History"),
+    p("Interactive analysis of Olympic athletes,
+      countries, medals and participation (1896-2016)")
+  ),
+ # HOMEPAGE
+  tabPanel(
+    "Home",
+
+    tags$style(HTML("
+      .home-page {
+        background-color: #f4f6f9;
+        padding: 30px;
+        color: #243247;
+      }
+
+      .hero {
+        background: linear-gradient(135deg, #17365D, #28527A);
+        color: white;
+        padding: 55px 35px;
+        border-radius: 12px;
+        text-align: center;
+        margin-bottom: 25px;
+      }
+
+      .hero h1 {
+        font-size: 38px;
+        font-weight: bold;
+        margin-bottom: 15px;
+      }
+
+      .hero p {
+        font-size: 17px;
+        max-width: 800px;
+        margin: auto;
+        line-height: 1.7;
+      }
+
+      .home-card {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        border-left: 5px solid #D4A017;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+        height: 100%;
+      }
+
+      .home-card h3 {
+        color: #17365D;
+        font-weight: bold;
+        margin-top: 0;
+      }
+
+      .credits {
+        background-color: #17365D;
+        color: white;
+        padding: 25px;
+        border-radius: 10px;
+        text-align: center;
+        margin-top: 20px;
+      }
+
+      .credits h3 {
+        color: #E6C56B;
+      }
+
+      .credits p {
+        line-height: 1.7;
+      }
+
+      .home-section-title {
+        color: #17365D;
+        font-weight: bold;
+        margin-top: 30px;
+        margin-bottom: 18px;
+      }
+    ")),
+
+    div(
+      class = "home-page",
+
+      # HERO SECTION
+      div(
+        class = "hero",
+        h1("120 Years of Olympic History"),
+        p(
+          "Exploring more than a century of Olympic competition through data, 
+          visualization, and historical analysis."
+        ),
+        br(),
+        p(
+          "From the first modern Olympic Games in 1896 to Rio 2016, 
+          discover how athletes, countries, and the Olympic movement 
+          have changed over time."
+        )
+      ),
+
+      # PROJECT INTRODUCTION
+      h2(
+        "About the Project",
+        class = "home-section-title"
+      ),
+
+      p(
+        style = "font-size:16px; line-height:1.8;",
+        "The Olympic Games are one of the world's most recognized 
+        sporting events, bringing together athletes from across the 
+        globe. However, the history of the Games tells a much larger 
+        story than athletic achievement alone. It reflects changes 
+        in international participation, gender representation, 
+        national success, and the role of sport in society."
+      ),
+
+      p(
+        style = "font-size:16px; line-height:1.8;",
+        "This interactive project uses historical Olympic athlete 
+        and medal data to explore those developments. Through 
+        interactive graphs, comparisons, and tables, visitors can 
+        examine Olympic history from different perspectives and 
+        discover patterns across more than 120 years of competition."
+      ),
+
+      # PROJECT GOALS
+      h2(
+        "Our Goals",
+        class = "home-section-title"
+      ),
+
+      fluidRow(
+        column(
+          4,
+          div(
+            class = "home-card",
+            h3("Explore Olympic Success"),
+            p(
+              "Examine medal counts across countries and athletes 
+              to identify historic performances and the most 
+              decorated competitors."
+            )
+          )
+        ),
+
+        column(
+          4,
+          div(
+            class = "home-card",
+            h3("Understand Participation"),
+            p(
+              "Investigate how Olympic participation has evolved, 
+              particularly the changing representation of men and 
+              women throughout the history of the Games."
+            )
+          )
+        ),
+
+        column(
+          4,
+          div(
+            class = "home-card",
+            h3("Investigate Historical Trends"),
+            p(
+              "Explore how age, national performance, and the 
+              advantage of hosting the Olympic Games have changed 
+              across different eras."
+            )
+          )
+        )
+      ),
+
+      # PUBLIC VALUE
+      h2(
+        "Why This Project Matters",
+        class = "home-section-title"
+      ),
+
+      div(
+        class = "home-card",
+        p(
+          style = "font-size:16px; line-height:1.8;",
+          "We hope this project makes Olympic history more accessible 
+          to students, educators, sports fans, and the general public. 
+          By turning a large historical dataset into interactive 
+          visualizations, visitors can explore information that might 
+          otherwise be difficult to interpret."
+        ),
+        p(
+          style = "font-size:16px; line-height:1.8;",
+          "The dashboard encourages curiosity and data-driven thinking. 
+          It allows users to compare countries, recognize changes in 
+          gender participation, investigate the relationship between 
+          hosting and athletic success, and better understand how the 
+          Olympic Games have developed over time."
+        )
+      ),
+
+      # HOW TO USE THE DASHBOARD
+      h2(
+        "Explore the Dashboard",
+        class = "home-section-title"
+      ),
+
+      div(
+        class = "home-card",
+        p(
+          "Use the tabs above to explore the different parts of 
+          the project. Each section offers interactive graphs, 
+          filters, or tables that allow you to investigate 
+          Olympic history at your own pace."
+        ),
+        tags$ul(
+          tags$li("Country Medals – Compare medal totals by country."),
+          tags$li("Top Athletes – Explore the most decorated athletes."),
+          tags$li("Age & Performance – Examine athlete age and medal outcomes."),
+          tags$li("Hosting Advantage – Compare medal performance at home and away."),
+          tags$li("Gender Participation – Track participation by gender over time."),
+          tags$li("Country Trends – Follow national medal performance across Olympic years.")
+        )
+      ),
+
+      # AUTHORS AND ACKNOWLEDGEMENTS
+      div(
+        class = "credits",
+        h3("Project Created By"),
+        h2("Jeremy Fyrer & Beri Chavangi"),
+        br(),
+        h3("Acknowledgements"),
+        p(
+          "We would like to acknowledge Washington and Lee University 
+          for providing the academic environment and resources that 
+          made this project possible."
+        ),
+        p(
+          "We also extend our sincere thanks to Professor Ferdous 
+          for guidance, instruction, and support throughout this project."
+        ),
+        br(),
+        p(
+          style = "font-size:13px; color:#d9e2ed;",
+          "Washington and Lee University | Olympic History Data Project"
+        )
+      )
+    )
+  ),
+  # ----------------------------------------------------------
+  # TAB 1: COUNTRY MEDALS
+  # ----------------------------------------------------------
+
+  tabPanel(
+    "Country Medals",
+
+    sidebarLayout(
+
+      sidebarPanel(
+
+        selectInput(
+          "season",
+          "Select Olympic Season:",
+          choices = c("Both", "Summer", "Winter")
+        ),
+
+        selectInput(
+          "medal_type",
+          "Select Medal Type:",
+          choices = c("Total", "Gold", "Silver", "Bronze")
+        ),
+
+        sliderInput(
+          "country_number",
+          "Number of Countries:",
+          min = 5,
+          max = 30,
+          value = 15
+        )
+      ),
+
+      mainPanel(
+
+        h3("How many medals does each country have?"),
+
+        plotOutput("country_plot"),
+        
+        p(
+  "This graph displays the number of Olympic medals earned by
+  each country, with the results determined by the selected
+  season and medal type. The horizontal bars make it possible
+  to compare national Olympic success and identify which
+  countries have accumulated the most medals. These comparisons
+  help illustrate how athletic success has been distributed
+  among nations throughout Olympic history.",
+  style = "font-size:14px; color:#555; line-height:1.6;"
+),
+
+        tableOutput("country_table")
+      )
+    )
+  ),
+
+  # ----------------------------------------------------------
+  # TAB 2: TOP ATHLETES
+  # ----------------------------------------------------------
+
+  tabPanel(
+    "Top Athletes",
+
+    sidebarLayout(
+
+      sidebarPanel(
+
+        selectInput(
+          "athlete_type",
+          "Select Medal Type:",
+          choices = c("Total", "Gold", "Silver", "Bronze")
+        ),
+
+        sliderInput(
+          "athlete_number",
+          "Number of Athletes:",
+          min = 5,
+          max = 30,
+          value = 10
+        )
+      ),
+
+      mainPanel(
+
+        h3("Which athletes have the most medals?"),
+
+        plotOutput("athlete_plot"),
+        
+        p(
+  "This graph ranks Olympic athletes according to their total
+  number of medals or their gold, silver, or bronze medal
+  counts. It highlights the individuals who have achieved
+  the greatest success across Olympic competition. Examining
+  these athletes provides a look at exceptional individual
+  performances and the lasting impact athletes can have
+  on Olympic history.",
+  style = "font-size:14px; color:#555; line-height:1.6;"
+),
+
+        tableOutput("athlete_table")
+      )
+    )
+  ),
+
+  # ----------------------------------------------------------
+  # TAB 3: AGE AND PERFORMANCE
+  # ----------------------------------------------------------
+
+  tabPanel(
+    "Age & Performance",
+
+    sidebarLayout(
+
+      sidebarPanel(
+
+        selectInput(
+          "sport",
+          "Select Sport:",
+          choices = sort(unique(athletes$Sport))
+        ),
+
+        selectInput(
+          "age_season",
+          "Select Season:",
+          choices = c("Both", "Summer", "Winter")
+        ),
+
+        selectInput(
+          "performance",
+          "Select Performance:",
+          choices = c(
+            "All",
+            "Medal winners",
+            "Non-medal winners"
+          )
+        )
+      ),
+
+      mainPanel(
+
+        h3("How does age affect performance?"),
+
+        plotOutput("age_plot"),
+        
+        p(
+  "This histogram compares the age distribution of medal-winning
+  and non-medal-winning athletes. Age is measured in years, while
+  the vertical axis represents the number of athlete-event records
+  within each age group. The distribution helps identify the ages
+  at which athletes most commonly compete and whether medal
+  winners tend to fall within different age ranges. This helps
+  investigate the relationship between age and Olympic performance.",
+  style = "font-size:14px; color:#555; line-height:1.6;"
+),
+
+        plotOutput("age_boxplot"),
+
+p(
+  "This boxplot compares the ages, measured in years, of medal
+  winners and athletes who did not earn a medal. The median line
+  in each box represents the typical age for each group, while
+  the boxes and whiskers show the distribution of ages. Comparing
+  these distributions helps determine whether medal-winning
+  athletes tend to be younger or older than their competitors.",
+  style = "font-size:14px; color:#555; line-height:1.6;"
+)
+      )
+    )
+  ),
+
+  # ----------------------------------------------------------
+  # TAB 4: HOSTING ADVANTAGE
+  # ----------------------------------------------------------
+
+  tabPanel(
+    "Hosting Advantage",
+
+    sidebarLayout(
+
+      sidebarPanel(
+
+        selectInput(
+          "host_season",
+          "Select Season:",
+          choices = c("Both", "Summer", "Winter")
+        ),
+
+        selectInput(
+          "host_medal",
+          "Select Medal Type:",
+          choices = c("Total", "Gold")
+        )
+      ),
+
+      mainPanel(
+
+        h3("Does hosting relate to medal success?"),
+
+        plotOutput("host_plot"),
+        
+        p(
+  "This graph compares the average number of medals earned by
+  countries when competing in an Olympic Games they hosted
+  versus when competing in other Olympic Games. The vertical
+  axis measures average medals per participating country.
+  A higher value for home competitions would suggest a possible
+  hosting advantage. This comparison helps investigate whether
+  competing on home soil is associated with greater Olympic
+  success.",
+  style = "font-size:14px; color:#555; line-height:1.6;"
+),
+
+        tableOutput("host_table")
+      )
+    )
+  ),
+  
+
+  # ----------------------------------------------------------
+  # TAB 5: GENDER PARTICIPATION
+  # ----------------------------------------------------------
+
+  tabPanel(
+    "Gender Participation",
+
+    sidebarLayout(
+
+      sidebarPanel(
+
+        selectInput(
+          "gender_season",
+          "Select Season:",
+          choices = c("Both", "Summer", "Winter")
+        )
+      ),
+
+      mainPanel(
+
+        h3("How has participation increased by gender?"),
+
+        plotOutput("gender_plot"),
+        
+        p(
+  "This line graph tracks the number of male and female Olympic
+  participants across Olympic years. The horizontal axis
+  represents the year of competition, while the vertical axis
+  shows the number of individual athletes participating.
+  Changes in the lines reveal how participation has evolved
+  over time and whether the gap between male and female
+  representation has narrowed. This provides important insight
+  into the historical expansion of women's participation
+  in international sports.",
+  style = "font-size:14px; color:#555; line-height:1.6;"
+),
+
+        plotOutput("gender_percentage"),
+
+p(
+  "This graph shows the percentage of Olympic participants
+  represented by each gender in different Olympic years.
+  Unlike the previous graph, which displays the number of
+  athletes, this visualization focuses on the proportion
+  of total participation. The percentages help show whether
+  Olympic representation has become more balanced between
+  men and women, regardless of changes in the overall size
+  of the Games.",
+  style = "font-size:14px; color:#555; line-height:1.6;"
+)
+      )
+    )
+  ),
+
+  # ----------------------------------------------------------
+  # TAB 6: COUNTRY TRENDS
+  # ----------------------------------------------------------
+
+  tabPanel(
+    "Country Trends",
+
+    sidebarLayout(
+
+      sidebarPanel(
+
+        selectizeInput(
+          "countries",
+          "Select Countries:",
+          choices = sort(unique(athletes$Country)),
+          selected = NULL,
+          multiple = TRUE
+        ),
+
+        selectInput(
+          "trend_season",
+          "Select Season:",
+          choices = c("Both", "Summer", "Winter")
+        )
+      ),
+
+      mainPanel(
+
+        h3("Which countries have improved over time?"),
+
+        plotOutput("trend_plot"),
+        
+        p(
+  "This line graph tracks the number of Olympic medals earned
+  by selected countries across different Olympic years.
+  The horizontal axis represents the year of competition,
+  and the vertical axis represents the number of medals earned.
+  Each line represents a different country. Changes in the
+  lines reveal periods of national improvement, decline,
+  and sustained success. This helps demonstrate how Olympic
+  dominance has shifted among countries throughout history.",
+  style = "font-size:14px; color:#555; line-height:1.6;"
+),
+
+        tableOutput("trend_table")
+      )
+    )
+  )
+)
+
+# ============================================================
+# 4. SERVER
+# ============================================================
+
+server <- function(input, output, session) {
+
+  # ----------------------------------------------------------
+  # COUNTRY MEDALS
+  # ----------------------------------------------------------
+
+  country_filtered <- reactive({
+
+    data <- country_summary
+
+    if (input$season != "Both") {
+      data <- data %>%
+        filter(Season == input$season)
+    }
+
+    data %>%
+      group_by(Country) %>%
+      summarise(
+        Gold = sum(Gold),
+        Silver = sum(Silver),
+        Bronze = sum(Bronze),
+        Total = sum(Total),
+        .groups = "drop"
+      ) %>%
+      arrange(desc(.data[[input$medal_type]]))
+  })
+
+  output$country_plot <- renderPlot({
+
+    country_filtered() %>%
+      slice_head(n = input$country_number) %>%
+      ggplot(
+        aes(
+          x = reorder(
+            Country,
+            .data[[input$medal_type]]
+          ),
+          y = .data[[input$medal_type]]
+        )
+      ) +
+      geom_col(fill = "steelblue") +
+      coord_flip() +
+      labs(
+        title = "Olympic Medal Rankings",
+        x = "Country",
+        y = "Number of Medals"
+      ) +
+      theme_minimal()
+  })
+
+  output$country_table <- renderTable({
+
+    head(
+      country_filtered(),
+      input$country_number
+    )
+  })
+
+  # ----------------------------------------------------------
+  # TOP ATHLETES
+  # ----------------------------------------------------------
+
+  output$athlete_plot <- renderPlot({
+
+    athlete_summary %>%
+      arrange(desc(.data[[input$athlete_type]])) %>%
+      slice_head(n = input$athlete_number) %>%
+      ggplot(
+        aes(
+          x = reorder(
+            Name,
+            .data[[input$athlete_type]]
+          ),
+          y = .data[[input$athlete_type]]
+        )
+      ) +
+      geom_col(fill = "goldenrod") +
+      coord_flip() +
+      labs(
+        title = "Most Decorated Olympic Athletes",
+        x = "Athlete",
+        y = "Medals"
+      ) +
+      theme_minimal()
+  })
+
+  output$athlete_table <- renderTable({
+
+    athlete_summary %>%
+      arrange(desc(.data[[input$athlete_type]])) %>%
+      head(input$athlete_number)
+  })
+
+  # ----------------------------------------------------------
+  # AGE AND PERFORMANCE
+  # ----------------------------------------------------------
+
+  age_filtered <- reactive({
+
+    data <- athletes %>%
+      filter(
+        Sport == input$sport,
+        !is.na(Age)
+      )
+
+    if (input$age_season != "Both") {
+      data <- data %>%
+        filter(Season == input$age_season)
+    }
+
+    if (input$performance == "Medal winners") {
+      data <- data %>%
+        filter(!is.na(Medal))
+    }
+
+    if (input$performance == "Non-medal winners") {
+      data <- data %>%
+        filter(is.na(Medal))
+    }
+
+    data
+  })
+
+  output$age_plot <- renderPlot({
+
+    age_filtered() %>%
+      mutate(
+        Performance = if_else(
+          is.na(Medal),
+          "No medal",
+          "Medal winner"
+        )
+      ) %>%
+      ggplot(
+        aes(
+          x = Age,
+          fill = Performance
+        )
+      ) +
+      geom_histogram(
+        bins = 25,
+        alpha = 0.7,
+        position = "identity"
+      ) +
+      labs(
+        title = "Age Distribution by Performance",
+        x = "Age",
+        y = "Number of Athlete-Event Records"
+      ) +
+      theme_minimal()
+  })
+
+  output$age_boxplot <- renderPlot({
+
+    age_filtered() %>%
+      mutate(
+        Performance = if_else(
+          is.na(Medal),
+          "No medal",
+          "Medal winner"
+        )
+      ) %>%
+      ggplot(
+        aes(
+          x = Performance,
+          y = Age,
+          fill = Performance
+        )
+      ) +
+      geom_boxplot() +
+      labs(
+        title = "Age Comparison",
+        x = "Performance",
+        y = "Age"
+      ) +
+      theme_minimal()
+  })
+
+  # ----------------------------------------------------------
+  # HOSTING ADVANTAGE
+  # ----------------------------------------------------------
+
+  game_index <- athletes %>%
+  distinct(Games, Year, Season)
+
+participation <- athletes %>%
+  distinct(NOC, Games, Season)
+
+# One country label per NOC for display in the host results table.
+noc_country <- athletes %>%
+  filter(!is.na(Country)) %>%
+  distinct(NOC, Country) %>%
+  group_by(NOC) %>%
+  summarise(Country = first(Country), .groups = "drop")
+
+medal_counts <- medals %>%
+  distinct(NOC, Games, Event, Medal) %>%
+  group_by(NOC, Games) %>%
+  summarise(
+    Total = n(),
+    Gold = sum(Medal == "Gold"),
+    .groups = "drop"
+  )
+
+  host_data <- reactive({
+    games <- host_lookup
+
+    if (input$host_season != "Both") {
+      games <- games %>% filter(Season == input$host_season)
+    }
+
+    # Attach Year to each Games label using the athlete data.
+    # Each Olympic edition is identified by Games + Season.
+    host_editions <- participation %>%
+      left_join(game_index, by = c("Games", "Season")) %>%
+      inner_join(
+        games %>% select(Year, Season, Host_NOC, City),
+        by = c("Year", "Season")
+      )
+
+    # Restrict the comparison to NOCs that have hosted at least once.
+    host_countries <- unique(games$Host_NOC)
+
+    comparison <- host_editions %>%
+      filter(NOC %in% host_countries) %>%
+      left_join(medal_counts, by = c("NOC", "Games")) %>%
+      left_join(noc_country, by = "NOC") %>%
+      mutate(
+        Total = replace_na(Total, 0L),
+        Gold = replace_na(Gold, 0L),
+        Host_Status = if_else(
+          NOC == Host_NOC,
+          "Home Olympics",
+          "Away Olympics"
+        )
+      )
+
+    comparison
+  })
+
+  output$host_plot <- renderPlot({
+    data <- host_data()
+    metric <- input$host_medal
+
+    validate(
+      need(nrow(data) > 0, "No hosting comparison data for this season.")
+    )
+
+    plot_data <- data %>%
+      group_by(Host_Status) %>%
+      summarise(
+        Average = mean(.data[[metric]], na.rm = TRUE),
+        .groups = "drop"
+      )
+
+    ggplot(plot_data, aes(x = Host_Status, y = Average, fill = Host_Status)) +
+      geom_col(width = 0.6) +
+      scale_fill_manual(
+        values = c(
+          "Home Olympics" = "#D4A017",
+          "Away Olympics" = "#3675A9"
+        )
+      ) +
+      labs(
+        title = "Does Hosting Improve Medal Performance?",
+        subtitle = "Average medals won per participating country among past host nations",
+        x = "Olympic participation",
+        y = paste("Average", tolower(metric), "medals per country"),
+        fill = "Location"
+      ) +
+      theme_minimal(base_size = 13)
+  })
+
+  output$host_table <- renderTable({
+    table_data <- host_data() %>%
+      filter(NOC == Host_NOC) %>%
+      select(Country, NOC, City, Year, Season, Host_Status, Total, Gold) %>%
+      arrange(Year)
+
+    validate(
+      need(nrow(table_data) > 0, "No host-country results for this season.")
+    )
+
+    as.data.frame(table_data)
+  })
+
+  # ----------------------------------------------------------
+  # GENDER PARTICIPATION
+  # ----------------------------------------------------------
+
+  gender_filtered <- reactive({
+
+    data <- gender_data
+
+    if (input$gender_season != "Both") {
+      data <- data %>%
+        filter(Season == input$gender_season)
+    }
+
+    data
+  })
+
+  output$gender_plot <- renderPlot({
+
+    ggplot(
+      gender_filtered(),
+      aes(
+        x = Year,
+        y = Participants,
+        color = Sex
+      )
+    ) +
+      geom_line(linewidth = 1) +
+      geom_point() +
+      labs(
+        title = "Olympic Participation by Gender",
+        x = "Year",
+        y = "Number of Participants"
+      ) +
+      theme_minimal()
+  })
+
+  output$gender_percentage <- renderPlot({
+
+    gender_filtered() %>%
+      group_by(Year) %>%
+      mutate(
+        Percentage = Participants /
+          sum(Participants) * 100
+      ) %>%
+      ggplot(
+        aes(
+          x = Year,
+          y = Percentage,
+          color = Sex
+        )
+      ) +
+      geom_line(linewidth = 1) +
+      labs(
+        title = "Gender Participation Percentage",
+        x = "Year",
+        y = "Percentage"
+      ) +
+      theme_minimal()
+  })
+
+  # ----------------------------------------------------------
+  # COUNTRY TRENDS
+  # ----------------------------------------------------------
+
+  trend_filtered <- reactive({
+
+    data <- country_trends
+
+    if (input$trend_season != "Both") {
+      data <- data %>%
+        filter(Season == input$trend_season)
+    }
+
+    data %>%
+      filter(Country %in% input$countries)
+  })
+
+  output$trend_plot <- renderPlot({
+
+    ggplot(
+      trend_filtered(),
+      aes(
+        x = Year,
+        y = Medals,
+        color = Country
+      )
+    ) +
+      geom_line(linewidth = 1) +
+      geom_point() +
+      labs(
+        title = "Country Medal Performance Over Time",
+        x = "Olympic Year",
+        y = "Medals"
+      ) +
+      theme_minimal()
+  })
+
+  output$trend_table <- renderTable({
+
+    trend_filtered() %>%
+      group_by(Country) %>%
+      summarise(
+        Total_Medals = sum(Medals),
+        Best_Performance = max(Medals),
+        .groups = "drop"
+      ) %>%
+      arrange(desc(Total_Medals))
+  })
+}
+```
+
+```{r}
+# ============================================================
+# 5. RUN SHINY APP
+# ============================================================
+
+shinyApp(
+  ui = ui,
+  server = server
+)
+```
+
+
