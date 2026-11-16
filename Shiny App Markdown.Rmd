@@ -19,6 +19,11 @@ athletes <- read_csv(
   show_col_types = FALSE
 )
 
+host_lookup <- read_csv(
+  "host_lookup.csv",
+  show_col_types = FALSE
+)
+
 medals <- athletes %>%
   filter(!is.na(Medal))
 
@@ -830,14 +835,12 @@ server <- function(input, output, session) {
   # ----------------------------------------------------------
   # HOSTING ADVANTAGE
   # ----------------------------------------------------------
-
-  game_index <- athletes %>%
+game_index <- athletes %>%
   distinct(Games, Year, Season)
 
 participation <- athletes %>%
   distinct(NOC, Games, Season)
 
-# One country label per NOC for display in the host results table.
 noc_country <- athletes %>%
   filter(!is.na(Country)) %>%
   distinct(NOC, Country) %>%
@@ -853,88 +856,87 @@ medal_counts <- medals %>%
     .groups = "drop"
   )
 
-  host_data <- reactive({
-    games <- host_lookup
+host_data <- reactive({
+  games <- host_lookup
 
-    if (input$host_season != "Both") {
-      games <- games %>% filter(Season == input$host_season)
-    }
+  if (input$host_season != "Both") {
+    games <- games %>%
+      filter(Season == input$host_season)
+  }
 
-    # Attach Year to each Games label using the athlete data.
-    # Each Olympic edition is identified by Games + Season.
-    host_editions <- participation %>%
-      left_join(game_index, by = c("Games", "Season")) %>%
-      inner_join(
-        games %>% select(Year, Season, Host_NOC, City),
-        by = c("Year", "Season")
-      )
-
-    # Restrict the comparison to NOCs that have hosted at least once.
-    host_countries <- unique(games$Host_NOC)
-
-    comparison <- host_editions %>%
-      filter(NOC %in% host_countries) %>%
-      left_join(medal_counts, by = c("NOC", "Games")) %>%
-      left_join(noc_country, by = "NOC") %>%
-      mutate(
-        Total = replace_na(Total, 0L),
-        Gold = replace_na(Gold, 0L),
-        Host_Status = if_else(
-          NOC == Host_NOC,
-          "Home Olympics",
-          "Away Olympics"
-        )
-      )
-
-    comparison
-  })
-
-  output$host_plot <- renderPlot({
-    data <- host_data()
-    metric <- input$host_medal
-
-    validate(
-      need(nrow(data) > 0, "No hosting comparison data for this season.")
+  # Attach Year to each Olympic Games edition
+  host_editions <- participation %>%
+    left_join(game_index, by = c("Games", "Season")) %>%
+    inner_join(
+      games %>% select(Year, Season, Host_NOC, City),
+      by = c("Year", "Season")
     )
 
-    plot_data <- data %>%
-      group_by(Host_Status) %>%
-      summarise(
-        Average = mean(.data[[metric]], na.rm = TRUE),
-        .groups = "drop"
+  # Identify countries that have hosted at least once
+  host_countries <- unique(games$Host_NOC)
+
+  comparison <- host_editions %>%
+    filter(NOC %in% host_countries) %>%
+    left_join(medal_counts, by = c("NOC", "Games")) %>%
+    left_join(noc_country, by = "NOC") %>%
+    mutate(
+      Total = replace_na(Total, 0L),
+      Gold = replace_na(Gold, 0L),
+      Host_Status = if_else(
+        NOC == Host_NOC,
+        "Home Olympics",
+        "Away Olympics"
       )
-
-    ggplot(plot_data, aes(x = Host_Status, y = Average, fill = Host_Status)) +
-      geom_col(width = 0.6) +
-      scale_fill_manual(
-        values = c(
-          "Home Olympics" = "#D4A017",
-          "Away Olympics" = "#3675A9"
-        )
-      ) +
-      labs(
-        title = "Does Hosting Improve Medal Performance?",
-        subtitle = "Average medals won per participating country among past host nations",
-        x = "Olympic participation",
-        y = paste("Average", tolower(metric), "medals per country"),
-        fill = "Location"
-      ) +
-      theme_minimal(base_size = 13)
-  })
-
-  output$host_table <- renderTable({
-    table_data <- host_data() %>%
-      filter(NOC == Host_NOC) %>%
-      select(Country, NOC, City, Year, Season, Host_Status, Total, Gold) %>%
-      arrange(Year)
-
-    validate(
-      need(nrow(table_data) > 0, "No host-country results for this season.")
     )
 
-    as.data.frame(table_data)
-  })
+  comparison
+})
 
+output$host_plot <- renderPlot({
+  data <- host_data()
+  metric <- input$host_medal
+
+  validate(
+    need(nrow(data) > 0, "No hosting comparison data for this season.")
+  )
+
+  plot_data <- data %>%
+    group_by(Host_Status) %>%
+    summarise(
+      Average = mean(.data[[metric]], na.rm = TRUE),
+      .groups = "drop"
+    )
+
+  ggplot(plot_data, aes(x = Host_Status, y = Average, fill = Host_Status)) +
+    geom_col(width = 0.6) +
+    scale_fill_manual(
+      values = c(
+        "Home Olympics" = "#D4A017",
+        "Away Olympics" = "#3675A9"
+      )
+    ) +
+    labs(
+      title = "Does Hosting Improve Medal Performance?",
+      subtitle = "Average medals won per participating country among past host nations",
+      x = "Olympic participation",
+      y = paste("Average", tolower(metric), "medals per country"),
+      fill = "Location"
+    ) +
+    theme_minimal(base_size = 13)
+})
+
+output$host_table <- renderTable({
+  table_data <- host_data() %>%
+    filter(NOC == Host_NOC) %>%
+    select(Country, NOC, City, Year, Season, Host_Status, Total, Gold) %>%
+    arrange(Year)
+
+  validate(
+    need(nrow(table_data) > 0, "No host-country results for this season.")
+  )
+
+  as.data.frame(table_data)
+})
   # ----------------------------------------------------------
   # GENDER PARTICIPATION
   # ----------------------------------------------------------
